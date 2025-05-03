@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const activityContextDiv = document.getElementById("activity-context");
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -20,11 +21,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        const participantsList = details.participants
+          .map((participant) => `<li>${participant}</li>`)
+          .join("");
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participants:</strong>
+            <ul>${participantsList || "<li>No participants yet</li>"}</ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -40,6 +49,35 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error fetching activities:", error);
     }
   }
+
+  // Function to display activity context
+  function displayActivityContext(activityDetails) {
+    activityContextDiv.innerHTML = `
+      <h3>Activity Details</h3>
+      <p><strong>Description:</strong> ${activityDetails.description}</p>
+      <p><strong>Schedule:</strong> ${activityDetails.schedule}</p>
+      <p><strong>Participants:</strong> ${activityDetails.participants.join(", ") || "None"}</p>
+    `;
+    activityContextDiv.classList.remove("hidden");
+  }
+
+  // Update activity context on dropdown change
+  activitySelect.addEventListener("change", async () => {
+    const selectedActivity = activitySelect.value;
+
+    if (selectedActivity) {
+      try {
+        const response = await fetch(`/activities/${encodeURIComponent(selectedActivity)}`);
+        const activityDetails = await response.json();
+        displayActivityContext(activityDetails);
+      } catch (error) {
+        activityContextDiv.innerHTML = "<p>Failed to load activity details. Please try again later.</p>";
+        console.error("Error fetching activity details:", error);
+      }
+    } else {
+      activityContextDiv.classList.add("hidden");
+    }
+  });
 
   // Handle form submission
   signupForm.addEventListener("submit", async (event) => {
